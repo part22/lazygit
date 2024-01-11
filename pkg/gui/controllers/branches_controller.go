@@ -8,6 +8,7 @@ import (
 	"github.com/jesseduffield/gocui"
 	"github.com/jesseduffield/lazygit/pkg/commands/git_commands"
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
+	"github.com/jesseduffield/lazygit/pkg/commands/oscommands"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
 	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
@@ -132,7 +133,13 @@ func (self *BranchesController) GetOnRenderToMain() func() error {
 			if branch == nil {
 				task = types.NewRenderStringTask(self.c.Tr.NoBranchesThisRepo)
 			} else {
-				cmdObj := self.c.Git().Branch.GetGraphCmdObj(branch.FullRefName())
+				var cmdObj oscommands.ICmdObj = nil
+				if branch.RemoteBranchStoredLocally() && !branch.MatchesUpstream() {
+					upstreamRef := branch.FullUpstreamRefName()
+					cmdObj = self.c.Git().Branch.GetGraphCmdObjForBranchLog(branch.FullRefName(), &upstreamRef)
+				} else{
+					cmdObj = self.c.Git().Branch.GetGraphCmdObjForBranchLog(branch.FullRefName(), nil)
+				}
 
 				task = types.NewRunPtyTask(cmdObj.GetCmd())
 			}

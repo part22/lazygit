@@ -124,8 +124,25 @@ func (self *BranchCommands) GetGraph(branchName string) (string, error) {
 
 func (self *BranchCommands) GetGraphCmdObj(branchName string) oscommands.ICmdObj {
 	branchLogCmdTemplate := self.UserConfig.Git.BranchLogCmd
+	branchLogCmdTemplate = strings.ReplaceAll(branchLogCmdTemplate, "{{remoteBranchName}}", "")
 	templateValues := map[string]string{
 		"branchName": self.cmd.Quote(branchName),
+	}
+
+	resolvedTemplate := utils.ResolvePlaceholderString(branchLogCmdTemplate, templateValues)
+
+	return self.cmd.New(str.ToArgv(resolvedTemplate)).DontLog()
+}
+
+func (self *BranchCommands) GetGraphCmdObjForBranchLog(branchName string, remoteBranchName *string) oscommands.ICmdObj {
+	branchLogCmdTemplate := self.UserConfig.Git.BranchLogCmd
+	templateValues := map[string]string{
+		"branchName": self.cmd.Quote(branchName),
+	}
+	if remoteBranchName != nil {
+		templateValues["remoteBranchName"] = self.cmd.Quote(*remoteBranchName)
+	} else {
+		branchLogCmdTemplate = strings.ReplaceAll(branchLogCmdTemplate, "{{remoteBranchName}}", "")
 	}
 
 	resolvedTemplate := utils.ResolvePlaceholderString(branchLogCmdTemplate, templateValues)
